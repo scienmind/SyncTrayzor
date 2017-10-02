@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
+using System.Security.Permissions;
 using System.Text.RegularExpressions;
 
 namespace SyncTrayzor.Services
@@ -33,6 +34,8 @@ namespace SyncTrayzor.Services
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         private const string applicationName = "SyncTrayzor";
+        private const string runPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+        private const string runPathWithHive = @"HKEY_CURRENT_USER\" + runPath;
         // Matches 'SyncTrayzor' and 'SyncTrayzor (n)' (where n is a digit)
         private static readonly Regex keyRegex = new Regex("^" + applicationName + @"(?: \((\d+)\))?$");
         private readonly string keyName;
@@ -54,35 +57,73 @@ namespace SyncTrayzor.Services
             // Default
             this.IsEnabled = true;
 
-            this.CheckAccess();
-
             // Find a key, if we can, which points to our current location
-            if (this.CanRead)
-                this.keyName = this.FindKeyName();
+            this.keyName = this.FindKeyNameAndCheckAccess();
         }
 
-        private void CheckAccess()
+        private string FindKeyNameAndCheckAccess()
         {
-            try
-            {
-                this.OpenRegistryKey(true).Dispose();
-                this._canWrite = true;
-                this._canRead = true;
-                logger.Info("Have read/write access to the registry");
-                return;
-            }
-            catch (SecurityException) { }
+            string keyName = null;
 
             try
             {
-                this.OpenRegistryKey(false).Dispose();
-                this._canRead = true;
-                logger.Info("Have read-only access to the registry");
-                return;
+                keyName = this.FindKeyName();
+            }
+            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            {
+                // Can't even get the key name? 
+                logger.Warn("Unable to find registry key name: do not have read access to the registry");
+                return null;
+            }
+
+            try
+            {
+                using (var key = this.OpenRegistryKey(true))
+                {
+                    if (key != null) // It's null if "there was an error"
+                    {
+                        // We can open it, but not have access to edit this value
+                        var value = key.GetValue(keyName);
+                        if (value != null)
+                        {
+                            key.SetValue(keyName, value);
+                        }
+                        else
+                        {
+                            key.SetValue(keyName, string.Empty);
+                            key.DeleteValue(keyName);
+                        }
+
+                        this._canWrite = true;
+                        this._canRead = true;
+                        logger.Debug("Have read/write access to the registry");
+                        return keyName;
+                    }
+                }
             }
             catch (SecurityException) { }
+            catch (UnauthorizedAccessException) { }
 
-            logger.Info("Have no access to the registry");
+            try
+            {
+                using (var key = this.OpenRegistryKey(false))
+                {
+                    if (key != null) // It's null if "there was an error"
+                    {
+                        // We can open it, but not have access to read this value
+                        var value = key.GetValue(keyName);
+
+                        this._canRead = true;
+                        logger.Warn("Have read-only access to the registry");
+                        return keyName;
+                    }
+                }
+            }
+            catch (SecurityException) { }
+            catch (UnauthorizedAccessException) { }
+
+            logger.Warn("Could find registry key name, but have no access to the registry");
+            return null;
         }
 
         private string FindKeyName()
@@ -105,8 +146,7 @@ namespace SyncTrayzor.Services
                             numbersSeen.Add(Int32.Parse(numberValue));
 
                         // See if this one points to our application
-                        var keyValue = key.GetValue(entry) as string;
-                        if (keyValue != null && keyValue.StartsWith($"\"{this.assemblyProvider.Location}\""))
+                        if (key.GetValue(entry) is string keyValue && keyValue.StartsWith($"\"{this.assemblyProvider.Location}\""))
                         {
                             foundKey = entry;
                             break;
@@ -137,7 +177,8 @@ namespace SyncTrayzor.Services
 
         private RegistryKey OpenRegistryKey(bool writable)
         {
-            return Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", writable);
+            var key = Registry.CurrentUser.CreateSubKey(runPath, writable ? RegistryKeyPermissionCheck.ReadWriteSubTree : RegistryKeyPermissionCheck.ReadSubTree);
+            return key;
         }
 
         public AutostartConfiguration GetCurrentSetup()
@@ -150,8 +191,7 @@ namespace SyncTrayzor.Services
 
             using (var registryKey = this.OpenRegistryKey(false))
             {
-                var value = registryKey.GetValue(this.keyName) as string;
-                if (value != null)
+                if (registryKey.GetValue(this.keyName) is string value)
                 {
                     autoStart = true;
                     if (value.Contains(" -minimized"))
@@ -160,7 +200,7 @@ namespace SyncTrayzor.Services
             }
 
             var config = new AutostartConfiguration() { AutoStart = autoStart, StartMinimized = startMinimized };
-            logger.Info("GetCurrentSetup determined that the current configuration is: {0}", config);
+            logger.Debug("GetCurrentSetup determined that the current configuration is: {0}", config);
             return config;
         }
 
@@ -169,7 +209,7 @@ namespace SyncTrayzor.Services
             if (!this.CanWrite)
                 throw new InvalidOperationException("Don't have permission to write to the registry");
 
-            logger.Info("Setting AutoStart to {0}", config);
+            logger.Debug("Setting AutoStart to {0}", config);
 
             using (var registryKey = this.OpenRegistryKey(true))
             {

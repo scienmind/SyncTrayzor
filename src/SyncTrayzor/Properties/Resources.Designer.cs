@@ -70,7 +70,7 @@ namespace SyncTrayzor.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Please buy me a beer!.
+        ///   Looks up a localized string similar to Donate now.
         /// </summary>
         public static string AboutView_Donate_Link {
             get {
@@ -79,7 +79,8 @@ namespace SyncTrayzor.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Find SyncTrayzor useful?.
+        ///   Looks up a localized string similar to Find SyncTrayzor useful?
+        ///Please donate to my charity fundraising campaign..
         /// </summary>
         public static string AboutView_Donate_Text {
             get {
@@ -88,7 +89,16 @@ namespace SyncTrayzor.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cheers! Thanks for buying me a beer..
+        ///   Looks up a localized string similar to Donate again.
+        /// </summary>
+        public static string AboutView_DonateAgain_Link {
+            get {
+                return ResourceManager.GetString("AboutView_DonateAgain_Link", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cheers! Thanks for donating..
         /// </summary>
         public static string AboutView_DonateThanks {
             get {
@@ -228,6 +238,60 @@ namespace SyncTrayzor.Properties {
         public static string ConflictResolutionView_ChooseDescription {
             get {
                 return ResourceManager.GetString("ConflictResolutionView_ChooseDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose Newest.
+        /// </summary>
+        public static string ConflictResolutionView_ChooseNewest_Button {
+            get {
+                return ResourceManager.GetString("ConflictResolutionView_ChooseNewest_Button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chooses the &apos;Original&apos; file if its &apos;Last Modified&apos; date is newest, or the conflict which was created most recently.
+        /// </summary>
+        public static string ConflictResolutionView_ChooseNewest_Text {
+            get {
+                return ResourceManager.GetString("ConflictResolutionView_ChooseNewest_Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose Newest Conflict.
+        /// </summary>
+        public static string ConflictResolutionView_ChooseNewestConflict_Button {
+            get {
+                return ResourceManager.GetString("ConflictResolutionView_ChooseNewestConflict_Button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chooses the conflict which was created most recently&lt;.
+        /// </summary>
+        public static string ConflictResolutionView_ChooseNewestConflict_Text {
+            get {
+                return ResourceManager.GetString("ConflictResolutionView_ChooseNewestConflict_Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose Original.
+        /// </summary>
+        public static string ConflictResolutionView_ChooseOriginal_Button {
+            get {
+                return ResourceManager.GetString("ConflictResolutionView_ChooseOriginal_Button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Takes the &apos;Original&apos; file from each conflict, and deletes all conflicting files.
+        /// </summary>
+        public static string ConflictResolutionView_ChooseOriginal_Text {
+            get {
+                return ResourceManager.GetString("ConflictResolutionView_ChooseOriginal_Text", resourceCulture);
             }
         }
         
@@ -372,6 +436,15 @@ namespace SyncTrayzor.Properties {
         public static string ConflictResolutionView_Title {
             get {
                 return ResourceManager.GetString("ConflictResolutionView_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You have selected {0} conflicts. Choose how you want to resolve them. The other versions will be deleted..
+        /// </summary>
+        public static string ConfliectResolutionView_ChooseMultipleDescription {
+            get {
+                return ResourceManager.GetString("ConfliectResolutionView_ChooseMultipleDescription", resourceCulture);
             }
         }
         
@@ -864,6 +937,42 @@ namespace SyncTrayzor.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Log Level:.
+        /// </summary>
+        public static string SettingsView_Logging_LogLevel {
+            get {
+                return ResourceManager.GetString("SettingsView_Logging_LogLevel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Debug.
+        /// </summary>
+        public static string SettingsView_Logging_LogLevel_Debug {
+            get {
+                return ResourceManager.GetString("SettingsView_Logging_LogLevel_Debug", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Info (Default).
+        /// </summary>
+        public static string SettingsView_Logging_LogLevel_Info {
+            get {
+                return ResourceManager.GetString("SettingsView_Logging_LogLevel_Info", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Trace.
+        /// </summary>
+        public static string SettingsView_Logging_LogLevel_Trace {
+            get {
+                return ResourceManager.GetString("SettingsView_Logging_LogLevel_Trace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show Syncthing Log File.
         /// </summary>
         public static string SettingsView_Logging_ShowSyncthingLog {
@@ -1291,15 +1400,6 @@ namespace SyncTrayzor.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to API key should contain only a-z A-Z 0-9 and -.
-        /// </summary>
-        public static string SettingsView_Validation_ApiKeyInvalidChars {
-            get {
-                return ResourceManager.GetString("SettingsView_Validation_ApiKeyInvalidChars", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Must have the form &apos;host:port&apos;, e.g. &apos;localhost:8384&apos;.
         /// </summary>
         public static string SettingsView_Validation_InvalidUrl {
@@ -1406,6 +1506,15 @@ namespace SyncTrayzor.Properties {
         public static string SettingsView_WatchedFolders_Unavailable {
             get {
                 return ResourceManager.GetString("SettingsView_WatchedFolders_Unavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Donate.
+        /// </summary>
+        public static string ShellView_Donate {
+            get {
+                return ResourceManager.GetString("ShellView_Donate", resourceCulture);
             }
         }
         

@@ -12,7 +12,6 @@ using System.Linq.Expressions;
 using System.Windows;
 using System.IO;
 using SyncTrayzor.Services.Metering;
-using SyncTrayzor.Syncthing.Folders;
 
 namespace SyncTrayzor.Pages.Settings
 {
@@ -95,6 +94,9 @@ namespace SyncTrayzor.Pages.Settings
 
         public BindableCollection<DebugFacilitySetting> SyncthingDebugFacilities { get; } = new BindableCollection<DebugFacilitySetting>();
 
+        public BindableCollection<LabelledValue<LogLevel>> LogLevels { get; }
+        public SettingItem<LogLevel> SelectedLogLevel { get; set; }
+
         public SettingsViewModel(
             IConfigurationProvider configurationProvider,
             IAutostartProvider autostartProvider,
@@ -161,8 +163,7 @@ namespace SyncTrayzor.Pages.Settings
                 x => String.Join(" ", x.SyncthingCommandLineFlags),
                 (x, v) =>
                 {
-                    IEnumerable<KeyValuePair<string, string>> envVars;
-                    KeyValueStringParser.TryParse(v, out envVars, mustHaveValue: false);
+                    KeyValueStringParser.TryParse(v, out var envVars, mustHaveValue: false);
                     x.SyncthingCommandLineFlags = envVars.Select(item => KeyValueStringParser.FormatItem(item.Key, item.Value)).ToList();
                 }, new SyncthingCommandLineFlagsValidator());
             this.SyncthingCommandLineFlags.RequiresSyncthingRestart = true;
@@ -171,8 +172,7 @@ namespace SyncTrayzor.Pages.Settings
                 x => KeyValueStringParser.Format(x.SyncthingEnvironmentalVariables),
                 (x, v) =>
                 {
-                    IEnumerable<KeyValuePair<string, string>> envVars;
-                    KeyValueStringParser.TryParse(v, out envVars);
+                    KeyValueStringParser.TryParse(v, out var envVars);
                     x.SyncthingEnvironmentalVariables = new EnvironmentalVariableCollection(envVars);
                 }, new SyncthingEnvironmentalVariablesValidator());
             this.SyncthingEnvironmentalVariables.RequiresSyncthingRestart = true;
@@ -182,6 +182,22 @@ namespace SyncTrayzor.Pages.Settings
 
             this.SyncthingDenyUpgrade = this.CreateBasicSettingItem(x => x.SyncthingDenyUpgrade);
             this.SyncthingDenyUpgrade.RequiresSyncthingRestart = true;
+
+            this.PriorityLevels = new BindableCollection<LabelledValue<SyncthingPriorityLevel>>()
+            {
+                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_AboveNormal, Services.Config.SyncthingPriorityLevel.AboveNormal),
+                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_Normal, Services.Config.SyncthingPriorityLevel.Normal),
+                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_BelowNormal, Services.Config.SyncthingPriorityLevel.BelowNormal),
+                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_Idle, Services.Config.SyncthingPriorityLevel.Idle),
+            };
+
+            this.LogLevels = new BindableCollection<LabelledValue<LogLevel>>()
+            {
+                LabelledValue.Create(Resources.SettingsView_Logging_LogLevel_Info, LogLevel.Info),
+                LabelledValue.Create(Resources.SettingsView_Logging_LogLevel_Debug, LogLevel.Debug),
+                LabelledValue.Create(Resources.SettingsView_Logging_LogLevel_Trace, LogLevel.Trace),
+            };
+            this.SelectedLogLevel = this.CreateBasicSettingItem(x => x.LogLevel);
 
             var configuration = this.configurationProvider.Load();
 
@@ -195,14 +211,6 @@ namespace SyncTrayzor.Pages.Settings
                 folderSetting.Bind(s => s.IsWatched, (o, e) => this.UpdateAreAllFoldersWatched());
                 folderSetting.Bind(s => s.IsNotified, (o, e) => this.UpdateAreAllFoldersNotified());
             }
-
-            this.PriorityLevels = new BindableCollection<LabelledValue<SyncthingPriorityLevel>>()
-            {
-                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_AboveNormal, SyncTrayzor.Services.Config.SyncthingPriorityLevel.AboveNormal),
-                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_Normal, SyncTrayzor.Services.Config.SyncthingPriorityLevel.Normal),
-                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_BelowNormal, SyncTrayzor.Services.Config.SyncthingPriorityLevel.BelowNormal),
-                LabelledValue.Create(Resources.SettingsView_Syncthing_ProcessPriority_Idle, SyncTrayzor.Services.Config.SyncthingPriorityLevel.Idle),
-            };
 
             this.Bind(s => s.AreAllFoldersNotified, (o, e) =>
             {
@@ -267,8 +275,7 @@ namespace SyncTrayzor.Pages.Settings
 
             var folderSettings = configuration.Folders.Select(x =>
             {
-                Folder folder;
-                this.syncthingManager.Folders.TryFetchById(x.ID, out folder);
+                this.syncthingManager.Folders.TryFetchById(x.ID, out var folder);
 
                 return new FolderSettings()
                 {
@@ -409,12 +416,12 @@ namespace SyncTrayzor.Pages.Settings
 
         public void ShowSyncthingLogFile()
         {
-            this.processStartProvider.ShowInExplorer(Path.Combine(this.applicationPathsProvider.LogFilePath, "syncthing.log"));
+            this.processStartProvider.ShowFileInExplorer(Path.Combine(this.applicationPathsProvider.LogFilePath, "syncthing.log"));
         }
 
         public void ShowSyncTrayzorLogFile()
         {
-            this.processStartProvider.ShowInExplorer(Path.Combine(this.applicationPathsProvider.LogFilePath, "SyncTrayzor.log"));
+            this.processStartProvider.ShowFileInExplorer(Path.Combine(this.applicationPathsProvider.LogFilePath, "SyncTrayzor.log"));
         }
 
         public void SelectLoggingTab()

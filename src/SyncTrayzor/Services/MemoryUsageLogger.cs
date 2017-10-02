@@ -16,8 +16,8 @@ namespace SyncTrayzor.Services
 
         public bool Enabled
         {
-            get { return this.timer.Enabled; }
-            set { this.timer.Enabled = value; }
+            get => this.timer.Enabled;
+            set => this.timer.Enabled = value;
         }
 
         public MemoryUsageLogger()
@@ -31,7 +31,7 @@ namespace SyncTrayzor.Services
             };
             this.timer.Elapsed += (o, e) =>
             {
-                logger.Debug("Working Set: {0}. Private Memory Size: {1}. GC Total Memory: {2}",
+                logger.Info("Working Set: {0}. Private Memory Size: {1}. GC Total Memory: {2}",
                     FormatUtils.BytesToHuman(this.process.WorkingSet64), FormatUtils.BytesToHuman(this.process.PrivateMemorySize64),
                     FormatUtils.BytesToHuman(GC.GetTotalMemory(true)));
             };

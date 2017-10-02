@@ -338,7 +338,7 @@ Please adjust your settings / whitelists to allow '{1}' to execute</value>
   </data>
   <data name="SettingsView_Validation_NotShouldBeEmpty" xml:space="preserve">
     <value>Should not be empty</value>
-    <comment>Validation message (shown in red) below the SettingsView_SyncthingAddress or SettingsView_ApiKey fields when the user makes this field empty</comment>
+    <comment>Validation message (shown in red) below the SettingsView_SyncthingAddress field when the user makes this field empty</comment>
   </data>
   <data name="ThirdPartyComponentsView_ComponentDescriptionLabel" xml:space="preserve">
     <value>Description:</value>
@@ -637,9 +637,6 @@ Full Path: {1}</value>
   <data name="SettingsView_DisableHardwareRendering" xml:space="preserve">
     <value>Disable hardware rendering</value>
   </data>
-  <data name="SettingsView_Validation_ApiKeyInvalidChars" xml:space="preserve">
-    <value>API key should contain only a-z A-Z 0-9 and -</value>
-  </data>
   <data name="SettingsView_RestartSyncthing_Message" xml:space="preserve">
     <value>You must restart Syncthing for these settings to take effect.
 
@@ -853,10 +850,11 @@ Do you want to restart SyncTrayzor now?</value>
     <value>Show in Folder</value>
   </data>
   <data name="AboutView_Donate_Link" xml:space="preserve">
-    <value>Please buy me a beer!</value>
+    <value>Donate now</value>
   </data>
   <data name="AboutView_Donate_Text" xml:space="preserve">
-    <value>Find SyncTrayzor useful?</value>
+    <value>Find SyncTrayzor useful?
+Please donate to my charity fundraising campaign.</value>
   </data>
   <data name="ConflictResolutionView_DeleteToRecycleBin" xml:space="preserve">
     <value>Move deleted files to the recycle bin, rather than deleting permanently</value>
@@ -891,7 +889,7 @@ Do you want to restart SyncTrayzor now?</value>
     <value>Resume</value>
   </data>
   <data name="AboutView_DonateThanks" xml:space="preserve">
-    <value>Cheers! Thanks for buying me a beer.</value>
+    <value>Cheers! Thanks for donating.</value>
   </data>
   <data name="SettingsView_ShowDeviceOrFolderRejectedBalloons" xml:space="preserve">
     <value>Show "Add New Device / Folder" balloon messages</value>
@@ -934,5 +932,49 @@ Do you want to restart SyncTrayzor now?</value>
   </data>
   <data name="Settings_SyncthingCommandLineFlags" xml:space="preserve">
     <value>Syncthing Command-line Flags</value>
+  </data>
+  <data name="ConflictResolutionView_ChooseNewestConflict_Button" xml:space="preserve">
+    <value>Choose Newest Conflict</value>
+  </data>
+  <data name="ConflictResolutionView_ChooseNewestConflict_Text" xml:space="preserve">
+    <value>Chooses the conflict which was created most recently&lt;</value>
+  </data>
+  <data name="ConflictResolutionView_ChooseNewest_Button" xml:space="preserve">
+    <value>Choose Newest</value>
+  </data>
+  <data name="ConflictResolutionView_ChooseNewest_Text" xml:space="preserve">
+    <value>Chooses the 'Original' file if its 'Last Modified' date is newest, or the conflict which was created most recently</value>
+  </data>
+  <data name="ConflictResolutionView_ChooseOriginal_Button" xml:space="preserve">
+    <value>Choose Original</value>
+  </data>
+  <data name="ConflictResolutionView_ChooseOriginal_Text" xml:space="preserve">
+    <value>Takes the 'Original' file from each conflict, and deletes all conflicting files</value>
+  </data>
+  <data name="ConfliectResolutionView_ChooseMultipleDescription" xml:space="preserve">
+    <value>You have selected {0} conflicts. Choose how you want to resolve them. The other versions will be deleted.</value>
+  </data>
+  <data name="AboutView_DonateAgain_Link" xml:space="preserve">
+    <value>Donate again</value>
+  </data>
+  <data name="ShellView_Donate" xml:space="preserve">
+    <value>Donate</value>
+    <comment>Shown in the top right of the menu bar, if the user hasn't yet donated</comment>
+  </data>
+  <data name="SettingsView_Logging_LogLevel" xml:space="preserve">
+    <value>Log Level:</value>
+    <comment>Label shown before SyncTrayzor logging level ComboBox</comment>
+  </data>
+  <data name="SettingsView_Logging_LogLevel_Debug" xml:space="preserve">
+    <value>Debug</value>
+    <comment>Name for the Debug log level (which provides lots of debug info)</comment>
+  </data>
+  <data name="SettingsView_Logging_LogLevel_Info" xml:space="preserve">
+    <value>Info (Default)</value>
+    <comment>Name for the Info log level</comment>
+  </data>
+  <data name="SettingsView_Logging_LogLevel_Trace" xml:space="preserve">
+    <value>Trace</value>
+    <comment>Name for the Trace log level (which provides the most debug info)</comment>
   </data>
 </root>

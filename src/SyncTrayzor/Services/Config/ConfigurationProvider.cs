@@ -13,11 +13,7 @@ namespace SyncTrayzor.Services.Config
     public class ConfigurationChangedEventArgs : EventArgs
     {
         private readonly Configuration baseConfiguration;
-        public Configuration NewConfiguration
-        {
-            // Ensure we always clone it, so people can modify
-            get { return new Configuration(this.baseConfiguration); }
-        }
+        public Configuration NewConfiguration => new Configuration(this.baseConfiguration);
 
         public ConfigurationChangedEventArgs(Configuration newConfiguration)
         {
@@ -40,9 +36,6 @@ namespace SyncTrayzor.Services.Config
 
     public class ConfigurationProvider : IConfigurationProvider
     {
-        private const string apiKeyChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
-        private const int apiKeyLength = 40;
-
         // Together these come to half a second, which is probably sensible
         private const int fileSaveRetryCount = 10;
         private const int fileSaveFailureDelayMs = 50;
@@ -93,8 +86,7 @@ namespace SyncTrayzor.Services.Config
             if (!this.filesystem.DirectoryExists(Path.GetDirectoryName(this.paths.ConfigurationFilePath)))
                 this.filesystem.CreateDirectory(Path.GetDirectoryName(this.paths.ConfigurationFilePath));
 
-            bool hadToCreateConfiguration;
-            this.currentConfig = this.LoadFromDisk(defaultConfiguration, out hadToCreateConfiguration);
+            this.currentConfig = this.LoadFromDisk(defaultConfiguration, out bool hadToCreateConfiguration);
             this.HadToCreateConfiguration = hadToCreateConfiguration;
 
             bool updateConfigInstallCount = false;
@@ -123,7 +115,7 @@ namespace SyncTrayzor.Services.Config
             if (!this.filesystem.FileExists(expandedSyncthingPath))
             {
                 // We know that this.paths.SyncthingBackupPath exists, because we checked this above
-                logger.Info("Syncthing doesn't exist at {0}, so copying from {1}", expandedSyncthingPath, this.paths.SyncthingBackupPath);
+                logger.Warn("Syncthing doesn't exist at {0}, so copying from {1}", expandedSyncthingPath, this.paths.SyncthingBackupPath);
 
                 var expandedSyncthingPathDir = Path.GetDirectoryName(expandedSyncthingPath);
                 if (!this.filesystem.DirectoryExists(expandedSyncthingPathDir))
@@ -145,7 +137,7 @@ namespace SyncTrayzor.Services.Config
 
             // Merge any updates from app.config / Configuration into the configuration file on disk
             // (creating if necessary)
-            logger.Debug("Loaded default configuration: {0}", defaultConfiguration);
+            logger.Info("Loaded default configuration: {0}", defaultConfiguration);
             XDocument defaultConfig;
             using (var ms = new System.IO.MemoryStream())
             {
@@ -172,7 +164,7 @@ namespace SyncTrayzor.Services.Config
                 }
                 else
                 {
-                    logger.Debug($"Configuration file {this.paths.ConfigurationFilePath} doesn't exist, so creating");
+                    logger.Info($"Configuration file {this.paths.ConfigurationFilePath} doesn't exist, so creating");
                     hadToCreate = true;
                     loadedConfig = defaultConfig;
                 }
@@ -183,9 +175,6 @@ namespace SyncTrayzor.Services.Config
             {
                 throw new BadConfigurationException(this.paths.ConfigurationFilePath, e);
             }
-
-            if (configuration.SyncthingApiKey == null)
-                configuration.SyncthingApiKey = this.GenerateApiKey();
 
             this.SaveToFile(configuration);
 
@@ -435,17 +424,6 @@ namespace SyncTrayzor.Services.Config
 
             if (lastException != null)
                 throw new CouldNotSaveConfigurationExeption(this.paths.ConfigurationFilePath, lastException);
-        }
-
-        private string GenerateApiKey()
-        {
-            var random = new Random();
-            var apiKey = new char[apiKeyLength];
-            for (int i = 0; i < apiKeyLength; i++)
-            {
-                apiKey[i] = apiKeyChars[random.Next(apiKeyChars.Length)];
-            }
-            return new string(apiKey);
         }
 
         private void OnConfigurationChanged(Configuration newConfiguration)

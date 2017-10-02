@@ -65,7 +65,7 @@ function get_with_wildcard($src, $value, $default = null)
 }
 
 $versions = [
-   '1.1.13' => [
+   '1.1.18' => [
       'installed' => [
          'direct_download_url' => [
             'x64' => 'https://github.com/canton7/SyncTrayzor/releases/download/v{version}/SyncTrayzorSetup-x64.exe',
@@ -81,11 +81,16 @@ $versions = [
       'sha1sum_download_url' => 'https://github.com/canton7/SyncTrayzor/releases/download/v{version}/sha1sum.txt.asc',
       'sha512sum_download_url' => 'https://github.com/canton7/SyncTrayzor/releases/download/v{version}/sha512sum.txt.asc',
       'release_page_url' => 'https://github.com/canton7/SyncTrayzor/releases/tag/v{version}',
-      'release_notes' => "- Improve 'Browse' button next to folder selection input (#297)\n- Fix right-click context menu in embedded browser (#300)\n- Fix crash on conflict resolution screen when Windows can't find an icon for the file type (#301)\n- Fix crash when opening SyncTrayzor (#303, #306, #318)\n- Indication of file conflict in tray icon didn't disappear in some cases (#307)\n- (Hopefully) add workaround for Chinese IME not working (#314)\n- Display folder names instead of folder IDs in tray notifications (#315)\n- Rename 'Restore' option in tray icon context menu (#320)",
+      'release_notes' => "- Don't store Syncthing's API key in config, and don't log it\n- Fix filesystem notifications when the file contained non-ASCII characters\n- Don't show device connected/disconnected notifications if a device is reconnecting a lot\n- Don't watch / raise notifications about new folders if no existing folders are watched / have notifications\n- Don't write to the disk as much by default\n- Fix crash on the settings screen\n- Be more reslient to weird registry permissions, fixing crash\n- Fix crash when calculating data transfer stats\n- Be more reslient when trying to find a free port for Syncthing to use",
    ]
 ];
 
 $upgrades = [
+   '1.1.17' => ['to' => 'latest', 'formatter' => '5', 'overrides' => ['release_notes' => "- Fix uninstaller crash if the survey is submitted while not connected to the internet"]],
+   '1.1.16' => ['to' => 'latest', 'formatter' => '5'],
+   '1.1.15' => ['to' => 'latest', 'formatter' => '5'],
+   '1.1.14' => ['to' => 'latest', 'formatter' => '5'],
+   '1.1.13' => ['to' => 'latest', 'formatter' => '5'],
    '1.1.12' => ['to' => 'latest', 'formatter' => '5'],
    '1.1.11' => ['to' => 'latest', 'formatter' => '5'],
    '1.1.10' => ['to' => 'latest', 'formatter' => '5'],
@@ -248,11 +253,10 @@ if ($error != null)
 $output = json_encode($rsp, JSON_UNESCAPED_SLASHES | JSON_FORCE_OBJECT);
 
 $date = date('c');
-$log_msg = "$date\t{$_SERVER['REMOTE_ADDR']}\t$version\t$arch\t$variant\t$output\t$loggable_error\n";
 
 $fp = fopen('log.txt', 'a+');
 flock($fp, LOCK_EX);
-fputcsv($fp, [$date, $_SERVER['REMOTE_ADDR'], $version, $arch, $variant, $output, $loggable_error]);
+fputcsv($fp, [$date, $_SERVER['REMOTE_ADDR'], $version, $arch, $variant, $data == null ? "N" : "Y", $loggable_error]);
 fclose($fp);
 
 echo $output;

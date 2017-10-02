@@ -22,7 +22,7 @@ namespace SyncTrayzor.Services.Metering
         bool IsEnabled { get; set; }
         bool IsSupportedByWindows { get; }
 
-        IReadOnlyList<string> PausedDeviceIds { get; }
+        IReadOnlyList<Device> PausedDevices { get; }
     }
 
     public class MeteredNetworkManager : IMeteredNetworkManager
@@ -37,7 +37,7 @@ namespace SyncTrayzor.Services.Metering
         private bool _isEnabled;
         public bool IsEnabled
         {
-            get { return this._isEnabled; }
+            get => this._isEnabled;
             set
             {
                 if (this._isEnabled == value)
@@ -54,9 +54,9 @@ namespace SyncTrayzor.Services.Metering
 
         private readonly object syncRoot = new object();
 
-        public IReadOnlyList<string> PausedDeviceIds { get; private set; } = new List<string>().AsReadOnly();
+        public IReadOnlyList<Device> PausedDevices { get; private set; } = new List<Device>().AsReadOnly();
 
-        private readonly Dictionary<string, DeviceState> deviceStates = new Dictionary<string, DeviceState>();
+        private readonly Dictionary<Device, DeviceState> deviceStates = new Dictionary<Device, DeviceState>();
 
         public MeteredNetworkManager(ISyncthingManager syncthingManager, INetworkCostManager costManager)
         {
@@ -115,8 +115,7 @@ namespace SyncTrayzor.Services.Metering
             bool changed = false;
             lock (this.syncRoot)
             {
-                DeviceState deviceState;
-                if (!this.deviceStates.TryGetValue(e.Device.DeviceId, out deviceState))
+                if (!this.deviceStates.TryGetValue(e.Device, out var deviceState))
                 {
                     logger.Warn($"Unable to pause device {e.Device.DeviceId} as we don't have a record of its state. This should not happen");
                     return;
@@ -124,13 +123,13 @@ namespace SyncTrayzor.Services.Metering
 
                 if (deviceState == DeviceState.Unpaused)
                 {
-                    this.deviceStates[e.Device.DeviceId] = DeviceState.PausedRenegade;
-                    logger.Info($"Device {e.Device.DeviceId} has been paused, and has gone renegade");
+                    this.deviceStates[e.Device] = DeviceState.PausedRenegade;
+                    logger.Debug($"Device {e.Device.DeviceId} has been paused, and has gone renegade");
                 }
                 else if (deviceState == DeviceState.UnpausedRenegade)
                 {
-                    this.deviceStates[e.Device.DeviceId] = DeviceState.Paused;
-                    logger.Info($"Device {e.Device.DeviceId} has been paused, and has stopped being renegade");
+                    this.deviceStates[e.Device] = DeviceState.Paused;
+                    logger.Debug($"Device {e.Device.DeviceId} has been paused, and has stopped being renegade");
                     changed = true;
                 }
             }
@@ -147,8 +146,7 @@ namespace SyncTrayzor.Services.Metering
             bool changed = false;
             lock (this.syncRoot)
             {
-                DeviceState deviceState;
-                if (!this.deviceStates.TryGetValue(e.Device.DeviceId, out deviceState))
+                if (!this.deviceStates.TryGetValue(e.Device, out var deviceState))
                 {
                     logger.Warn($"Unable to resume device {e.Device.DeviceId} as we don't have a record of its state. This should not happen");
                     return;
@@ -156,14 +154,14 @@ namespace SyncTrayzor.Services.Metering
 
                 if (deviceState == DeviceState.Paused)
                 {
-                    this.deviceStates[e.Device.DeviceId] = DeviceState.UnpausedRenegade;
-                    logger.Info($"Device {e.Device.DeviceId} has been resumed, and has gone renegade");
+                    this.deviceStates[e.Device] = DeviceState.UnpausedRenegade;
+                    logger.Debug($"Device {e.Device.DeviceId} has been resumed, and has gone renegade");
                     changed = true;
                 }
                 else if (deviceState == DeviceState.PausedRenegade)
                 {
-                    this.deviceStates[e.Device.DeviceId] = DeviceState.Unpaused;
-                    logger.Info($"Device {e.Device.DeviceId} has been resumed, and has stopped being renegade");
+                    this.deviceStates[e.Device] = DeviceState.Unpaused;
+                    logger.Debug($"Device {e.Device.DeviceId} has been resumed, and has stopped being renegade");
                 }
             }
 
@@ -192,7 +190,7 @@ namespace SyncTrayzor.Services.Metering
             if (!this.IsEnabled)
                 return;
 
-            logger.Info("Network costs changed. Updating devices");
+            logger.Debug("Network costs changed. Updating devices");
             this.ResetRenegades();
             this.Update();
         }
@@ -202,7 +200,7 @@ namespace SyncTrayzor.Services.Metering
             if (!this.IsEnabled)
                 return;
 
-            logger.Info("Networks changed. Updating devices");
+            logger.Debug("Networks changed. Updating devices");
             this.ResetRenegades();
             this.Update();
         }
@@ -225,7 +223,7 @@ namespace SyncTrayzor.Services.Metering
         {
             lock (this.syncRoot)
             {
-                this.PausedDeviceIds = this.deviceStates.Where(x => x.Value == DeviceState.Paused).Select(x => x.Key).ToList().AsReadOnly();
+                this.PausedDevices = this.deviceStates.Where(x => x.Value == DeviceState.Paused).Select(x => x.Key).ToList().AsReadOnly();
             }
 
             this.PausedDevicesChanged?.Invoke(this, EventArgs.Empty);
@@ -238,16 +236,16 @@ namespace SyncTrayzor.Services.Metering
 
         private async void Disable()
         {
-            List<string> deviceIdsToUnpause;
+            List<Device> devicesToUnpause;
             lock (this.syncRoot)
             {
-                deviceIdsToUnpause = this.deviceStates.Where(x => x.Value == DeviceState.Paused).Select(x => x.Key).ToList();
+                devicesToUnpause = this.deviceStates.Where(x => x.Value == DeviceState.Paused).Select(x => x.Key).ToList();
             }
 
             this.ClearAllDevices();
 
             if (this.syncthingManager.State == SyncthingState.Running)
-                await Task.WhenAll(deviceIdsToUnpause.Select(x => this.syncthingManager.Devices.ResumeDeviceAsync(x)).ToList());
+                await Task.WhenAll(devicesToUnpause.Select(x => this.syncthingManager.Devices.ResumeDeviceAsync(x)).ToList());
         }
 
         private async void Update()
@@ -259,14 +257,14 @@ namespace SyncTrayzor.Services.Metering
             {
                 foreach (var device in devices)
                 {
-                    if (!this.deviceStates.ContainsKey(device.DeviceId))
-                        this.deviceStates[device.DeviceId] = device.Paused ? DeviceState.Paused : DeviceState.Unpaused;
+                    if (!this.deviceStates.ContainsKey(device))
+                        this.deviceStates[device] = device.Paused ? DeviceState.Paused : DeviceState.Unpaused;
                 }
                 var deviceIds = new HashSet<string>(devices.Select(x => x.DeviceId));
-                foreach (var deviceStateId in this.deviceStates.Keys.ToList())
+                foreach (var deviceState in this.deviceStates.Keys.ToList())
                 {
-                    if (!deviceIds.Contains(deviceStateId))
-                        this.deviceStates.Remove(deviceStateId);
+                    if (!deviceIds.Contains(deviceState.DeviceId))
+                        this.deviceStates.Remove(deviceState);
                 }
             }
 
@@ -288,7 +286,7 @@ namespace SyncTrayzor.Services.Metering
             DeviceState deviceState;
             lock (this.syncRoot)
             {
-                if (!this.deviceStates.TryGetValue(device.DeviceId, out deviceState))
+                if (!this.deviceStates.TryGetValue(device, out deviceState))
                 {
                     logger.Warn($"Unable to fetch device state for device ID {device.DeviceId}. This should not happen.");
                     return false;
@@ -297,7 +295,7 @@ namespace SyncTrayzor.Services.Metering
 
             if (deviceState == DeviceState.PausedRenegade || deviceState == DeviceState.UnpausedRenegade)
             {
-                logger.Info($"Skipping update of device {device.DeviceId} as it has gone renegade");
+                logger.Debug($"Skipping update of device {device.DeviceId} as it has gone renegade");
                 return false;
             }
 
@@ -309,25 +307,39 @@ namespace SyncTrayzor.Services.Metering
 
             if (shouldBePaused && !device.Paused)
             {
-                logger.Info($"Pausing device {device.DeviceId}");
-                await this.syncthingManager.Devices.PauseDeviceAsync(device.DeviceId);
-
-                lock (this.syncRoot)
+                logger.Debug($"Pausing device {device.DeviceId}");
+                try
                 {
-                    this.deviceStates[device.DeviceId] = DeviceState.Paused;
+                    await this.syncthingManager.Devices.PauseDeviceAsync(device);
+
+                    lock (this.syncRoot)
+                    {
+                        this.deviceStates[device] = DeviceState.Paused;
+                    }
+                    changed = true;
                 }
-                changed = true;
+                catch (InvalidOperationException e)
+                {
+                    logger.Warn($"Could not pause device {device.DeviceId}: {e.Message}");
+                }
             }
             else if (!shouldBePaused && device.Paused)
             {
-                logger.Info($"Resuming device {device.DeviceId}");
-                await this.syncthingManager.Devices.ResumeDeviceAsync(device.DeviceId);
-
-                lock (this.syncRoot)
+                logger.Debug($"Resuming device {device.DeviceId}");
+                try
                 {
-                    this.deviceStates[device.DeviceId] = DeviceState.Unpaused;
+                    await this.syncthingManager.Devices.ResumeDeviceAsync(device);
+
+                    lock (this.syncRoot)
+                    {
+                        this.deviceStates[device] = DeviceState.Unpaused;
+                    }
+                    changed = true;
                 }
-                changed = true;
+                catch (InvalidOperationException e)
+                {
+                    logger.Warn($"Could not resume device {device.DeviceId}: {e.Message}");
+                }
             }
 
             return changed;

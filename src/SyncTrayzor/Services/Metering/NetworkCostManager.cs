@@ -66,25 +66,24 @@ namespace SyncTrayzor.Services.Metering
 
             try
             {
-                uint costVal;
-                this.networkListManager.GetCost(out costVal, ref sockAddr);
+                this.networkListManager.GetCost(out uint costVal, ref sockAddr);
                 var cost = (NLM_CONNECTION_COST)costVal;
                 return !cost.HasFlag(NLM_CONNECTION_COST.NLM_CONNECTION_COST_UNRESTRICTED);
             }
             catch (ArgumentException e)
             {
                 // See #210
-                logger.Error(e, $"GetCost failed (ArgumentException). IP: {address}, Bytes: {BitConverter.ToString(sockAddr.data)}");
+                logger.Warn(e, $"GetCost failed (ArgumentException). IP: {address}, Bytes: {BitConverter.ToString(sockAddr.data)}");
             }
             catch (COMException e)
             {
                 // See #215
-                logger.Error(e, $"GetCost failed (COMException, HResult {e.HResult}). IP: {address}, Bytes: {BitConverter.ToString(sockAddr.data)}");
+                logger.Warn(e, $"GetCost failed (COMException, HResult {e.HResult}). IP: {address}, Bytes: {BitConverter.ToString(sockAddr.data)}");
             }
             catch (Exception e)
             {
                 // Being safe...
-                logger.Error(e, $"GetCost failed for an unknown reason. IP: {address}, Bytes: {BitConverter.ToString(sockAddr.data)}");
+                logger.Warn(e, $"GetCost failed for an unknown reason. IP: {address}, Bytes: {BitConverter.ToString(sockAddr.data)}");
             }
 
             return false;

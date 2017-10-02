@@ -31,7 +31,7 @@ namespace SyncTrayzor.Syncthing
         event EventHandler<FolderRejectedEventArgs> FolderRejected;
 
         string ExecutablePath { get; set; }
-        string ApiKey { get; set; }
+        string ApiKey { get; }
         string PreferredHostAndPort { get; set; }
         Uri Address { get; set; }
         List<string> SyncthingCommandLineFlags { get; set; }
@@ -62,6 +62,9 @@ namespace SyncTrayzor.Syncthing
 
     public class SyncthingManager : ISyncthingManager
     {
+        private const string apiKeyChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
+        private const int apiKeyLength = 40;
+
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         private readonly SynchronizedEventDispatcher eventDispatcher;
@@ -110,7 +113,7 @@ namespace SyncTrayzor.Syncthing
         public event EventHandler<FolderRejectedEventArgs> FolderRejected;
 
         private readonly object totalConnectionStatsLock = new object();
-        private SyncthingConnectionStats _totalConnectionStats;
+        private SyncthingConnectionStats _totalConnectionStats = new SyncthingConnectionStats(0, 0, 0, 0);
         public SyncthingConnectionStats TotalConnectionStats
         {
             get { lock (this.totalConnectionStatsLock) { return this._totalConnectionStats; } }
@@ -121,7 +124,7 @@ namespace SyncTrayzor.Syncthing
         public event EventHandler ProcessExitedWithError;
 
         public string ExecutablePath { get; set; }
-        public string ApiKey { get; set; }
+        public string ApiKey { get; }
         public string PreferredHostAndPort { get; set; }
         public Uri Address { get; set; }
         public string SyncthingCustomHomeDir { get; set; }
@@ -158,6 +161,8 @@ namespace SyncTrayzor.Syncthing
         {
             this.StartedTime = DateTime.MinValue;
             this.LastConnectivityEventTime = DateTime.MinValue;
+
+            this.ApiKey = this.GenerateApiKey();
 
             this.eventDispatcher = new SynchronizedEventDispatcher(this);
             this.processRunner = processRunner;
@@ -319,6 +324,17 @@ namespace SyncTrayzor.Syncthing
             }
         }
 
+        private string GenerateApiKey()
+        {
+            var random = new Random();
+            var apiKey = new char[apiKeyLength];
+            for (int i = 0; i < apiKeyLength; i++)
+            {
+                apiKey[i] = apiKeyChars[random.Next(apiKeyChars.Length)];
+            }
+            return new string(apiKey);
+        }
+
         private async Task CreateApiClientAsync(CancellationToken cancellationToken)
         {
             logger.Debug("Starting API clients");
@@ -341,7 +357,7 @@ namespace SyncTrayzor.Syncthing
             }
             catch (OperationCanceledException) // If Syncthing dies on its own, etc
             {
-                logger.Info("StartClientAsync aborted");
+                logger.Debug("StartClientAsync aborted");
             }
             catch (ApiException e)
             {
@@ -396,8 +412,10 @@ namespace SyncTrayzor.Syncthing
             // Things will attempt to talk to Syncthing over http. If Syncthing is set to 'https only', this will redirect.
             var preferredAddressWithScheme = new Uri("https://" + this.PreferredHostAndPort);
             var port = this.freePortFinder.FindFreePort(preferredAddressWithScheme.Port);
-            var uriBuilder = new UriBuilder(preferredAddressWithScheme);
-            uriBuilder.Port = port;
+            var uriBuilder = new UriBuilder(preferredAddressWithScheme)
+            {
+                Port = port
+            };
             this.Address = uriBuilder.Uri;
 
             this.processRunner.ApiKey = this.ApiKey;
@@ -544,12 +562,10 @@ namespace SyncTrayzor.Syncthing
 
         private void OnFolderRejected(string deviceId, string folderId)
         {
-            Device device;
-            if (!this.Devices.TryFetchById(deviceId, out device))
+            if (!this.Devices.TryFetchById(deviceId, out var device))
                 return;
 
-            Folder folder;
-            if (!this.Folders.TryFetchById(folderId, out folder))
+            if (!this.Folders.TryFetchById(folderId, out var folder))
                 return;
 
             this.eventDispatcher.Raise(this.FolderRejected, new FolderRejectedEventArgs(device, folder));

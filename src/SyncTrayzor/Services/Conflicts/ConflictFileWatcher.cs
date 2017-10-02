@@ -66,7 +66,7 @@ namespace SyncTrayzor.Services.Conflicts
         private bool _isEnabled;
         public bool IsEnabled
         {
-            get { return this._isEnabled; }
+            get => this._isEnabled;
             set
             {
                 if (this._isEnabled == value)
@@ -154,8 +154,7 @@ namespace SyncTrayzor.Services.Conflicts
             {
                 foreach (var conflictedFile in this.conflictFileOptions)
                 {
-                    ParsedConflictFileInfo parsedConflictFileInfo;
-                    if (this.conflictFileManager.TryFindBaseFileForConflictFile(conflictedFile, out parsedConflictFileInfo))
+                    if (this.conflictFileManager.TryFindBaseFileForConflictFile(conflictedFile, out var parsedConflictFileInfo))
                     {
                         conflictFiles.Add(parsedConflictFileInfo.OriginalPath);
                     }
@@ -163,7 +162,7 @@ namespace SyncTrayzor.Services.Conflicts
 
                 this.conflictedFiles = conflictFiles.ToList();
 
-                logger.Info($"Refreshing conflicted files. Found {this.conflictedFiles.Count} from {this.conflictFileOptions.Count} options");
+                logger.Debug($"Refreshing conflicted files. Found {this.conflictedFiles.Count} from {this.conflictFileOptions.Count} options");
             }
 
             this.ConflictedFilesChanged?.Invoke(this, EventArgs.Empty);

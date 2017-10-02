@@ -32,14 +32,14 @@ namespace SyncTrayzor.Services.UpdateManagement
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        private static readonly TimeSpan deadTimeAfterStarting = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan deadTimeAfterStarting = TimeSpan.FromMinutes(5);
         // We'll never check more frequently than this, ever
-        private static readonly TimeSpan updateCheckDebounceTime = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan updateCheckDebounceTime = TimeSpan.FromHours(1);
         // If 'remind me later' is active, we'll check this frequently
-        private static readonly TimeSpan remindMeLaterTime = TimeSpan.FromHours(24);
+        private static readonly TimeSpan remindMeLaterTime = TimeSpan.FromDays(3);
         // How often the update checking timer should fire. Having it fire too often is OK: we won't
         // take action
-        private static readonly TimeSpan updateCheckingTimerInterval = TimeSpan.FromHours(3);
+        private static readonly TimeSpan updateCheckingTimerInterval = TimeSpan.FromHours(8);
 
         private readonly IApplicationState applicationState;
         private readonly IApplicationWindowState applicationWindowState;
@@ -66,7 +66,7 @@ namespace SyncTrayzor.Services.UpdateManagement
         private bool _checkForUpdates;
         public bool CheckForUpdates
         {
-            get { return this._checkForUpdates; }
+            get => this._checkForUpdates;
             set
             {
                 if (this._checkForUpdates == value)
@@ -215,7 +215,7 @@ namespace SyncTrayzor.Services.UpdateManagement
                     // If another application is fullscreen, don't bother
                     if (this.userActivityMonitor.IsWindowFullscreen())
                     {
-                        logger.Info("Another application was fullscreen, so we didn't prompt the user");
+                        logger.Debug("Another application was fullscreen, so we didn't prompt the user");
                         return;
                     }
 
@@ -235,7 +235,7 @@ namespace SyncTrayzor.Services.UpdateManagement
                     catch (OperationCanceledException)
                     {
                         this.toastCts = null;
-                        logger.Info("Update toast cancelled. Moving to a dialog");
+                        logger.Debug("Update toast cancelled. Moving to a dialog");
                         promptResult = this.updatePromptProvider.ShowDialog(checkResult, variantHandler.CanAutoInstall, variantHandler.RequiresUac);
                     }
                 }
@@ -246,7 +246,7 @@ namespace SyncTrayzor.Services.UpdateManagement
                     case VersionPromptResult.InstallNow:
                         Debug.Assert(variantHandler.CanAutoInstall);
                         logger.Info("Auto-installing {0}", checkResult.NewVersion);
-                        variantHandler. AutoInstall(this.PathToRestartApplication());
+                        variantHandler.AutoInstall(this.PathToRestartApplication());
                         break;
 
                     case VersionPromptResult.Download:
@@ -264,6 +264,7 @@ namespace SyncTrayzor.Services.UpdateManagement
                         logger.Info("Not installing version {0}, but will remind later", checkResult.NewVersion);
                         break;
 
+                    case VersionPromptResult.ShowMoreDetails:
                     default:
                         Debug.Assert(false);
                         break;
